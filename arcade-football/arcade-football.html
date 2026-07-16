@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ARCADE FOOTBALL 96</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  :root{
+    --p1: #ffe14d;
+    --p2: #4de1ff;
+    --blue: #1e5fbf;
+    --red: #d1352b;
+    --panel: #0b1220;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: radial-gradient(ellipse at center, #12351a 0%, #061006 70%, #020602 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Press Start 2P','Courier New',monospace;
+    overflow:hidden;
+    color:#fff;
+  }
+  #cabinet{
+    position:relative;
+    padding:14px 14px 18px 14px;
+    background:linear-gradient(180deg,#2a2a32,#141419);
+    border-radius:18px;
+    box-shadow:0 0 0 4px #000, 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.05);
+  }
+  #screen{
+    position:relative;
+    width: min(94vw, 960px);
+    aspect-ratio: 1080 / 800;
+    background:#000;
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+  }
+  canvas{
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    image-rendering:pixelated;
+  }
+  #scanlines{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 2px, transparent 3px);
+    mix-blend-mode:multiply;
+    z-index:6;
+  }
+  #vignette{
+    position:absolute; inset:0; pointer-events:none;
+    box-shadow: inset 0 0 90px rgba(0,0,0,0.75);
+    z-index:7;
+  }
+
+  #hud{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; align-items:flex-start; justify-content:center;
+    gap:10px; padding:6px 8px;
+    z-index:5;
+    pointer-events:none;
+  }
+  .hud-box{
+    background:rgba(5,10,5,0.78);
+    border:2px solid #ffffff33;
+    border-radius:3px;
+    padding:5px 8px;
+    font-size:10px;
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+  #scoreboard{ display:flex; align-items:center; gap:6px; }
+  #scoreboard .lbl{font-size:9px;}
+  #scoreboard .score{color:#fff; font-size:13px;}
+  #clockBox{color:#a9ffb0;}
+  #halfBox{color:#ffd27a;}
+
+  #cardBanner{
+    position:absolute; top:34px; left:50%; transform:translateX(-50%);
+    background:rgba(20,20,20,0.9); border:2px solid #f5d80e;
+    padding:6px 12px; border-radius:3px; font-size:10px;
+    display:none; z-index:8; text-align:center; white-space:nowrap;
+  }
+
+  #banner{
+    position:absolute; top:44%; left:50%; transform:translate(-50%,-50%);
+    z-index:9; text-align:center; display:none;
+    text-shadow:3px 3px 0 #000, -1px -1px 0 #000;
+  }
+  #banner .big{font-size:26px; color:#fff; margin-bottom:8px; letter-spacing:2px;}
+  #banner .small{font-size:11px; color:#ffe14d;}
+
+  .overlayScreen{
+    position:absolute; inset:0; z-index:10;
+    background:rgba(3,8,3,0.92);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:16px; gap:14px;
+  }
+  .title{
+    font-size:clamp(18px,4vw,32px);
+    color:#ffe14d;
+    text-shadow:4px 4px 0 #b23; 
+    letter-spacing:2px;
+  }
+  .subtitle{ font-size:10px; color:#7db2ff; letter-spacing:2px;}
+  .kitPickerWrap{ display:flex; gap:26px; flex-wrap:wrap; align-items:flex-start; justify-content:center; margin:4px 0;}
+  .kitPickerCol{ background:rgba(255,255,255,0.05); padding:10px 12px; border-radius:4px; border:1px solid rgba(255,255,255,0.15); }
+  .kitPickerHead{ font-size:9px; margin-bottom:8px; text-align:center; }
+  .kitPreviewRow{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; font-size:7.5px; }
+  .kitPreviewSwatch{ width:22px; height:22px; border:2px solid #fff; border-radius:4px; }
+  .kitGrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .formationGrid{ grid-template-columns:repeat(2,1fr); grid-auto-flow:row; }
+  .kitOption{
+    width:26px; height:26px; border-radius:4px; cursor:pointer;
+    border:2px solid rgba(255,255,255,0.25);
+    transition:transform 0.1s;
+  }
+  .kitOption:hover{ transform:scale(1.12); }
+  .kitOption.selected{ border-color:#fff; box-shadow:0 0 0 2px #000, 0 0 0 4px currentColor; }
+  .formOption{
+    padding:5px 4px; border-radius:4px; cursor:pointer; text-align:center;
+    border:2px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.06);
+    font-size:8px; letter-spacing:1px; transition:transform 0.1s;
+  }
+  .formOption:hover{ transform:scale(1.05); background:rgba(255,255,255,0.12); }
+  .formOption.selected{ border-color:#ffe14d; color:#ffe14d; background:rgba(255,225,77,0.15); }
+  .formationPreviewWrap{ display:flex; justify-content:center; margin-bottom:6px; }
+  .formationPreview{ width:150px; height:96px; background:#1c5c2c; border:1px solid rgba(255,255,255,0.4); border-radius:2px; }
+  .kitWarning{ font-size:7.5px; color:#ffb84d; text-align:center; max-width:520px; }
+  .modeOptionsWrap{ display:flex; gap:22px; flex-wrap:wrap; justify-content:center; margin:10px 0; }
+  .modeOption{
+    width:220px; padding:16px 14px; border-radius:6px; cursor:pointer;
+    border:2px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.05);
+    text-align:center; transition:transform 0.12s;
+  }
+  .modeOption:hover{ transform:scale(1.04); background:rgba(255,255,255,0.1); }
+  .modeOption.selected{ border-color:#ffe14d; background:rgba(255,225,77,0.15); }
+  .modeOptionTitle{ font-size:11px; color:#ffe14d; margin-bottom:8px; letter-spacing:1px; }
+  .modeOptionDesc{ font-size:7.5px; color:#cde; line-height:1.6; }
+  .controlsGrid{ display:flex; gap:26px; flex-wrap:wrap; justify-content:center; font-size:8px; line-height:1.9; text-align:left;}
+  .controlsGrid .col{ background:rgba(255,255,255,0.05); padding:10px 14px; border-radius:4px; border:1px solid rgba(255,255,255,0.15);}
+  .controlsGrid .head{ font-size:9px; margin-bottom:6px; }
+  .blink{ animation:blink 1s steps(2) infinite; font-size:11px; color:#fff; margin-top:6px;}
+  @keyframes blink{ 50%{opacity:0;} }
+  .rulesNote{ font-size:7.5px; color:#9ad; max-width:600px; line-height:1.8; }
+  .finalScore{ font-size:22px; color:#fff; }
+
+  #footerHint{
+    position:absolute; bottom:4px; left:0; right:0; text-align:center;
+    font-size:7px; color:#ffffff88; z-index:5; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<div id="cabinet">
+  <div id="screen">
+    <canvas id="pitchCanvas" width="1080" height="720"></canvas>
+    <div id="scanlines"></div>
+    <div id="vignette"></div>
+
+    <div id="hud">
+      <div class="hud-box" id="scoreboard">
+        <span class="lbl" id="scoreLabelP1">P1</span><span class="score" id="scoreBlue">0</span>
+        <span class="lbl">-</span>
+        <span class="score" id="scoreRed">0</span><span class="lbl" id="scoreLabelP2">P2</span>
+      </div>
+      <div class="hud-box" id="clockBox">00:00</div>
+      <div class="hud-box" id="halfBox">1ST HALF</div>
+    </div>
+
+    <div id="cardBanner"></div>
+    <div id="banner">
+      <div class="big" id="bannerBig">KICK OFF</div>
+      <div class="small" id="bannerSmall"></div>
+    </div>
+
+    <div id="footerHint">P = PAUSE</div>
+
+    <div class="overlayScreen" id="modeScreen">
+      <div class="title">ARCADE FOOTBALL 96</div>
+      <div class="subtitle">CHOOSE YOUR MATCH TYPE</div>
+      <div class="modeOptionsWrap" id="modeOptionsWrap">
+        <div class="modeOption" data-mode="2P">
+          <div class="modeOptionTitle">2 PLAYER LOCAL</div>
+          <div class="modeOptionDesc">P1 vs P2 on the same keyboard</div>
+        </div>
+        <div class="modeOption" data-mode="1P">
+          <div class="modeOptionTitle">1 PLAYER VS COM</div>
+          <div class="modeOptionDesc">You play P1, the computer plays P2 - full AI: moves, passes, shoots, tackles</div>
+        </div>
+      </div>
+      <div class="blink">PRESS ENTER OR SPACE TO CONTINUE</div>
+    </div>
+
+    <div class="overlayScreen" id="startScreen" style="display:none;">
+      <div class="title">ARCADE FOOTBALL 96</div>
+      <div class="subtitle" id="startSubtitle">11 v 11 &nbsp;•&nbsp; TWO PLAYER LOCAL &nbsp;•&nbsp; FULL RULES</div>
+      <div class="kitPickerWrap">
+        <div class="kitPickerCol">
+          <div class="kitPickerHead" style="color:var(--p1)">PLAYER 1 KIT</div>
+          <div class="kitPreviewRow"><div class="kitPreviewSwatch" id="kitPreviewP1"></div><span id="kitPreviewNameP1">BLUE</span></div>
+          <div class="kitGrid" id="kitGridP1"></div>
+        </div>
+        <div class="kitPickerCol">
+          <div class="kitPickerHead" style="color:var(--p2)" id="kitPickerHeadP2">PLAYER 2 KIT</div>
+          <div class="kitPreviewRow"><div class="kitPreviewSwatch" id="kitPreviewP2"></div><span id="kitPreviewNameP2">RED</span></div>
+          <div class="kitGrid" id="kitGridP2"></div>
+        </div>
+      </div>
+      <div class="kitWarning" id="kitWarning" style="display:none;">BOTH PLAYERS PICKED THE SAME COLOUR - CHOOSE DIFFERENT KITS SO YOU CAN TELL TEAMS APART</div>
+      <div class="controlsGrid">
+        <div class="col">
+          <div class="head" style="color:var(--p1)">PLAYER 1</div>
+          W A S D &nbsp;MOVE<br>
+          SPACE &nbsp;PASS<br>
+          E &nbsp;SHOOT (hold to power up)<br>
+          SPACE / E (no ball) &nbsp;TACKLE<br>
+          LEFT SHIFT &nbsp;SPRINT
+        </div>
+        <div class="col" id="p2ControlsCol">
+          <div class="head" style="color:var(--p2)" id="p2ControlsHead">PLAYER 2</div>
+          <div id="p2ControlsBody">
+          ARROW KEYS &nbsp;MOVE<br>
+          ENTER &nbsp;PASS<br>
+          / &nbsp;SHOOT (hold to power up)<br>
+          ENTER / (no ball) &nbsp;TACKLE<br>
+          RIGHT SHIFT &nbsp;SPRINT
+          </div>
+        </div>
+      </div>
+      <div class="rulesNote">RULES IN PLAY: OFFSIDE &nbsp;•&nbsp; FOULS &amp; CARDS &nbsp;•&nbsp; CORNERS &nbsp;•&nbsp; THROW-INS &nbsp;•&nbsp; GOAL KICKS<br>Control auto-switches to whichever of your players is nearest the ball.</div>
+      <div class="blink">PRESS ENTER OR SPACE TO CHOOSE FORMATIONS</div>
+    </div>
+
+    <div class="overlayScreen" id="formationScreen" style="display:none;">
+      <div class="title" style="font-size:22px;">PICK YOUR FORMATION</div>
+      <div class="kitPickerWrap">
+        <div class="kitPickerCol">
+          <div class="kitPickerHead" style="color:var(--p1)">PLAYER 1 FORMATION</div>
+          <div class="formationPreviewWrap"><svg id="formPreviewP1" viewBox="0 0 100 64" class="formationPreview"></svg></div>
+          <div class="kitPreviewRow"><span id="formPreviewNameP1">4-4-2</span></div>
+          <div class="kitGrid formationGrid" id="formGridP1"></div>
+        </div>
+        <div class="kitPickerCol">
+          <div class="kitPickerHead" style="color:var(--p2)" id="formPickerHeadP2">PLAYER 2 FORMATION</div>
+          <div class="formationPreviewWrap"><svg id="formPreviewP2" viewBox="0 0 100 64" class="formationPreview"></svg></div>
+          <div class="kitPreviewRow"><span id="formPreviewNameP2">4-4-2</span></div>
+          <div class="kitGrid formationGrid" id="formGridP2"></div>
+        </div>
+      </div>
+      <div class="blink">PRESS ENTER OR SPACE TO KICK OFF</div>
+    </div>
+
+    <div class="overlayScreen" id="halftimeScreen" style="display:none;">
+      <div class="title" style="font-size:22px;">HALF TIME</div>
+      <div class="finalScore" id="htScore">0 - 0</div>
+      <div class="blink">PRESS ENTER OR SPACE FOR 2ND HALF</div>
+    </div>
+
+    <div class="overlayScreen" id="fulltimeScreen" style="display:none;">
+      <div class="title" style="font-size:22px;">FULL TIME</div>
+      <div class="finalScore" id="ftScore">0 - 0</div>
+      <div class="subtitle" id="ftResult" style="margin-top:6px;"></div>
+      <div class="blink">PRESS ENTER OR SPACE TO PLAY AGAIN</div>
+    </div>
+
+    <div class="overlayScreen" id="pauseScreen" style="display:none; background:rgba(3,8,3,0.75);">
+      <div class="title" style="font-size:20px;">PAUSED</div>
+      <div class="blink">PRESS P TO RESUME</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================== CONSTANTS ============================== */
+const PITCH_W = 1000, PITCH_H = 640, MARGIN = 40;
+const GOAL_W = 76;
+const GOAL_Y1 = PITCH_H/2 - GOAL_W/2, GOAL_Y2 = PITCH_H/2 + GOAL_W/2;
+const PBOX_DEPTH = 155, PBOX_HEIGHT = 400;
+const PBOX_Y1 = PITCH_H/2 - PBOX_HEIGHT/2, PBOX_Y2 = PITCH_H/2 + PBOX_HEIGHT/2;
+const GBOX_DEPTH = 52, GBOX_HEIGHT = 182;
+const GBOX_Y1 = PITCH_H/2 - GBOX_HEIGHT/2, GBOX_Y2 = PITCH_H/2 + GBOX_HEIGHT/2;
+const CENTER_CIRCLE_R = 85;
+const PEN_SPOT_X = 100;
+
+const CONFIG = {
+  halfLengthSeconds: 150,
+  playerSpeed: 1.95,
+  sprintMult: 1.5,
+  ballFriction: 0.985,
+  tackleRange: 24,
+  controlRadius: 15,
+  gkControlRadius: 12,
+  passPower: 7.2,
+  shotPowerMax: 11.5,
+};
+
+const FORMATIONS = {
+  '4-4-2': [
+    {role:'GK', d:25,  y:320, num:1},
+    {role:'DF', d:140, y:110, num:2},
+    {role:'DF', d:115, y:245, num:3},
+    {role:'DF', d:115, y:395, num:4},
+    {role:'DF', d:140, y:530, num:5},
+    {role:'MF', d:370, y:110, num:6},
+    {role:'MF', d:340, y:245, num:7},
+    {role:'MF', d:340, y:395, num:8},
+    {role:'MF', d:370, y:530, num:9},
+    {role:'FW', d:610, y:230, num:10},
+    {role:'FW', d:610, y:410, num:11},
+  ],
+  '4-3-3': [
+    {role:'GK', d:25,  y:320, num:1},
+    {role:'DF', d:140, y:110, num:2},
+    {role:'DF', d:115, y:245, num:3},
+    {role:'DF', d:115, y:395, num:4},
+    {role:'DF', d:140, y:530, num:5},
+    {role:'MF', d:350, y:170, num:6},
+    {role:'MF', d:330, y:320, num:7},
+    {role:'MF', d:350, y:470, num:8},
+    {role:'FW', d:600, y:120, num:9},
+    {role:'FW', d:630, y:320, num:10},
+    {role:'FW', d:600, y:520, num:11},
+  ],
+  '4-2-3-1': [
+    {role:'GK', d:25,  y:320, num:1},
+    {role:'DF', d:140, y:110, num:2},
+    {role:'DF', d:115, y:245, num:3},
+    {role:'DF', d:115, y:395, num:4},
+    {role:'DF', d:140, y:530, num:5},
+    {role:'MF', d:320, y:220, num:6},
+    {role:'MF', d:320, y:420, num:7},
+    {role:'MF', d:480, y:130, num:8},
+    {role:'MF', d:500, y:320, num:9},
+    {role:'MF', d:480, y:510, num:10},
+    {role:'FW', d:650, y:320, num:11},
+  ],
+  '5-3-2': [
+    {role:'GK', d:25,  y:320, num:1},
+    {role:'DF', d:130, y:80,  num:2},
+    {role:'DF', d:110, y:210, num:3},
+    {role:'DF', d:100, y:320, num:4},
+    {role:'DF', d:110, y:430, num:5},
+    {role:'DF', d:130, y:560, num:6},
+    {role:'MF', d:380, y:170, num:7},
+    {role:'MF', d:360, y:320, num:8},
+    {role:'MF', d:380, y:470, num:9},
+    {role:'FW', d:610, y:230, num:10},
+    {role:'FW', d:610, y:410, num:11},
+  ],
+  '3-4-3': [
+    {role:'GK', d:25,  y:320, num:1},
+    {role:'DF', d:120, y:170, num:2},
+    {role:'DF', d:100, y:320, num:3},
+    {role:'DF', d:120, y:470, num:4},
+    {role:'MF', d:370, y:110, num:5},
+    {role:'MF', d:340, y:245, num:6},
+    {role:'MF', d:340, y:395, num:7},
+    {role:'MF', d:370, y:530, num:8},
+    {role:'FW', d:610, y:120, num:9},
+    {role:'FW', d:630, y:320, num:10},
+    {role:'FW', d:610, y:520, num:11},
+  ],
+};
+const FORMATION_NAMES = Object.keys(FORMATIONS);
+let p1Formation = '4-4-2';
+let p2Formation = '4-4-2';
+
+/* ============================== UTIL ============================== */
+function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function normalizeAngle(a){ while(a>Math.PI)a-=Math.PI*2; while(a<-Math.PI)a+=Math.PI*2; return a; }
+function angleDiffAbs(a,b){ let d=Math.abs(normalizeAngle(a-b)); return d; }
+
+/* ============================== AUDIO ============================== */
+let actx=null;
+function ensureAudio(){
+  if(!actx){
+    const AC = window.AudioContext||window.webkitAudioContext;
+    if(AC) actx = new AC();
+  }
+  if(actx && actx.state==='suspended') actx.resume();
+}
+function beep(freq,dur,type,vol,delay){
+  if(!actx) return;
+  type=type||'square'; vol=vol||0.15; delay=delay||0;
+  const t0=actx.currentTime+delay;
+  const osc=actx.createOscillator();
+  const gain=actx.createGain();
+  osc.type=type; osc.frequency.value=freq;
+  gain.gain.setValueAtTime(vol,t0);
+  gain.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  osc.connect(gain).connect(actx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function sfxKick(){ beep(220,0.06,'square',0.18); }
+function sfxWhistle(){ beep(1500,0.14,'sine',0.18); beep(1500,0.14,'sine',0.18,0.16); }
+function sfxGoal(){ [523,659,784,1046].forEach((f,i)=>beep(f,0.18,'square',0.2,i*0.12)); }
+function sfxCard(){ beep(110,0.35,'sawtooth',0.2); }
+function sfxOut(){ beep(320,0.07,'triangle',0.14); }
+
+function createNoiseBuffer(duration){
+  if(!actx) return null;
+  const bufferSize = Math.max(1, Math.floor(actx.sampleRate*duration));
+  const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+  return buffer;
+}
+function playNoiseBurst(duration, filterType, filterFreq, peakVol, delay, filterQ){
+  if(!actx) return;
+  const buffer = createNoiseBuffer(duration);
+  if(!buffer) return;
+  const src = actx.createBufferSource();
+  src.buffer = buffer;
+  const filter = actx.createBiquadFilter();
+  filter.type = filterType || 'lowpass';
+  filter.frequency.value = filterFreq || 1000;
+  filter.Q.value = filterQ || 0.7;
+  const gain = actx.createGain();
+  const t0 = actx.currentTime + (delay||0);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(peakVol, t0+Math.min(0.25,duration*0.3));
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
+  src.connect(filter).connect(gain).connect(actx.destination);
+  src.start(t0); src.stop(t0+duration+0.05);
+}
+
+// A shot is meant to feel noticeably more powerful than a regular pass/touch:
+// a deeper thump plus a filtered noise transient, both scaling with power.
+function sfxShoot(power){
+  const norm = clamp((power-4)/(CONFIG.shotPowerMax-4), 0, 1);
+  beep(85-norm*15, 0.16+norm*0.06, 'sawtooth', 0.3+norm*0.12);
+  playNoiseBurst(0.13, 'lowpass', 1400-norm*400, 0.32+norm*0.16, 0, 0.9);
+}
+
+// Synthesized crowd cheer for a goal - layered, filtered noise bursts in a
+// couple of successive swells (no external audio files needed/available).
+function sfxCrowdCheer(){
+  if(!actx) return;
+  const pulses = [0, 0.5, 1.05];
+  pulses.forEach((delay,i)=>{
+    playNoiseBurst(0.95+i*0.1, 'bandpass', 900+i*180, 0.32-i*0.05, delay, 0.5);
+  });
+  playNoiseBurst(1.6, 'highpass', 2600, 0.1, 0.15, 1.1);
+}
+
+/* ============================== TEAMS ============================== */
+const KIT_PALETTE = [
+  {name:'BLUE',     hex:'#1e5fbf'},
+  {name:'RED',      hex:'#d1352b'},
+  {name:'YELLOW',   hex:'#f2c744'},
+  {name:'BLACK',    hex:'#1a1a1a'},
+  {name:'WHITE',    hex:'#f2f2f2'},
+  {name:'ORANGE',   hex:'#e8720c'},
+  {name:'PURPLE',   hex:'#7b2ff2'},
+  {name:'SKY BLUE', hex:'#3fc1e0'},
+  {name:'MAROON',   hex:'#7a1f2b'},
+  {name:'PINK',     hex:'#e85d9c'},
+];
+let p1KitColor = KIT_PALETTE[0].hex;
+let p2KitColor = KIT_PALETTE[1].hex;
+let gameMode = '2P'; // '2P' = local two-player, '1P' = human P1 vs full AI-controlled P2
+
+function hexToRgb(hex){
+  const v = parseInt(hex.slice(1),16);
+  return { r:(v>>16)&255, g:(v>>8)&255, b:v&255 };
+}
+function kitLuminance(hex){
+  const {r,g,b} = hexToRgb(hex);
+  return (0.299*r + 0.587*g + 0.114*b)/255;
+}
+function pickShorts(hex){
+  return kitLuminance(hex) > 0.55 ? '#20232a' : '#ffffff';
+}
+function pickGkColor(outfieldHex){
+  // Pick whichever candidate keeper kit contrasts most with the outfield kit,
+  // so the goalkeeper is never accidentally camouflaged against their own team.
+  const candidates = ['#f2c744', '#1a1a1a', '#39d1c4', '#ffffff'];
+  const of = hexToRgb(outfieldHex);
+  let best=candidates[0], bestD=-1;
+  candidates.forEach(c=>{
+    const cc=hexToRgb(c);
+    const d=Math.hypot(cc.r-of.r, cc.g-of.g, cc.b-of.b);
+    if(d>bestD){ bestD=d; best=c; }
+  });
+  return best;
+}
+
+function makeTeam(label,color,defendGoalX){
+  return {
+    label, color,
+    gkColor: pickGkColor(color),
+    shorts: pickShorts(color),
+    defendGoalX,
+    attackDir: defendGoalX===0?1:-1,
+    score:0, players:[]
+  };
+}
+let blueTeam, redTeam;
+
+function renderKitPickers(){
+  const gridP1 = document.getElementById('kitGridP1');
+  const gridP2 = document.getElementById('kitGridP2');
+  if(!gridP1 || !gridP2) return;
+
+  function build(grid, getColor, setColor, previewSwatchId, previewNameId){
+    grid.innerHTML = '';
+    KIT_PALETTE.forEach(k=>{
+      const sw = document.createElement('div');
+      sw.className = 'kitOption' + (getColor()===k.hex ? ' selected' : '');
+      sw.style.background = k.hex;
+      sw.style.color = k.hex; // used by .selected box-shadow (currentColor)
+      sw.title = k.name;
+      sw.addEventListener('click', ()=>{
+        setColor(k.hex);
+        renderKitPickers();
+      });
+      grid.appendChild(sw);
+    });
+    const preview = document.getElementById(previewSwatchId);
+    const previewName = document.getElementById(previewNameId);
+    const chosen = KIT_PALETTE.find(k=>k.hex===getColor());
+    if(preview) preview.style.background = getColor();
+    if(previewName) previewName.textContent = chosen ? chosen.name : getColor().toUpperCase();
+  }
+
+  build(gridP1, ()=>p1KitColor, (c)=>{p1KitColor=c;}, 'kitPreviewP1', 'kitPreviewNameP1');
+  build(gridP2, ()=>p2KitColor, (c)=>{p2KitColor=c;}, 'kitPreviewP2', 'kitPreviewNameP2');
+
+  const warn = document.getElementById('kitWarning');
+  if(warn) warn.style.display = (p1KitColor===p2KitColor) ? 'block' : 'none';
+}
+renderKitPickers();
+
+function renderModeScreen(){
+  const wrap = document.getElementById('modeOptionsWrap');
+  if(!wrap) return;
+  wrap.querySelectorAll('.modeOption').forEach(el=>{
+    el.classList.toggle('selected', el.dataset.mode===gameMode);
+    el.onclick = ()=>{ gameMode = el.dataset.mode; renderModeScreen(); };
+  });
+}
+renderModeScreen();
+
+// Relabels "Player 2" as "Computer" across the kit/formation/controls screens
+// once 1-player mode is chosen, without changing any of the actual pickers -
+// the human still picks both teams' kit and formation either way.
+function applyModeUI(){
+  const isCom = gameMode==='1P';
+  const sub = document.getElementById('startSubtitle');
+  if(sub) sub.innerHTML = isCom
+    ? '11 v 11 &nbsp;\u2022&nbsp; VS COMPUTER &nbsp;\u2022&nbsp; FULL RULES'
+    : '11 v 11 &nbsp;\u2022&nbsp; TWO PLAYER LOCAL &nbsp;\u2022&nbsp; FULL RULES';
+  const kh = document.getElementById('kitPickerHeadP2');
+  if(kh) kh.textContent = isCom ? 'COMPUTER KIT' : 'PLAYER 2 KIT';
+  const fh = document.getElementById('formPickerHeadP2');
+  if(fh) fh.textContent = isCom ? 'COMPUTER FORMATION' : 'PLAYER 2 FORMATION';
+  const ch = document.getElementById('p2ControlsHead');
+  if(ch) ch.textContent = isCom ? 'COMPUTER' : 'PLAYER 2';
+  const cb = document.getElementById('p2ControlsBody');
+  if(cb) cb.innerHTML = isCom
+    ? 'FULLY AUTOMATED &mdash; moves, passes,<br>shoots and tackles on its own.'
+    : 'ARROW KEYS &nbsp;MOVE<br>ENTER &nbsp;PASS<br>/ &nbsp;SHOOT (hold to power up)<br>ENTER / (no ball) &nbsp;TACKLE<br>RIGHT SHIFT &nbsp;SPRINT';
+}
+
+function confirmMode(){
+  document.getElementById('modeScreen').style.display='none';
+  document.getElementById('startScreen').style.display='flex';
+  phase='START';
+  applyModeUI();
+}
+
+function buildFormationSVG(svgEl, formationKey, mirrored, color){
+  const layout = FORMATIONS[formationKey];
+  if(!layout) return;
+  const W=100, H=64;
+  let markup = `<line x1="50" y1="0" x2="50" y2="${H}" stroke="rgba(255,255,255,0.35)" stroke-width="0.6"/>`;
+  layout.forEach(f=>{
+    const xNorm = mirrored ? (1000-f.d)/1000*W : f.d/1000*W;
+    const yNorm = f.y/640*H;
+    const r = f.role==='GK' ? 2.8 : 2.3;
+    const fill = f.role==='GK' ? '#f2c744' : color;
+    markup += `<circle cx="${xNorm.toFixed(1)}" cy="${yNorm.toFixed(1)}" r="${r}" fill="${fill}" stroke="#000" stroke-width="0.4"/>`;
+  });
+  svgEl.innerHTML = markup;
+}
+
+function renderFormationPickers(){
+  const gridP1 = document.getElementById('formGridP1');
+  const gridP2 = document.getElementById('formGridP2');
+  if(!gridP1 || !gridP2) return;
+
+  function build(grid, getFormation, setFormation, previewSvgId, previewNameId, mirrored, color){
+    grid.innerHTML = '';
+    FORMATION_NAMES.forEach(name=>{
+      const btn = document.createElement('div');
+      btn.className = 'formOption' + (getFormation()===name ? ' selected' : '');
+      btn.textContent = name;
+      btn.addEventListener('click', ()=>{
+        setFormation(name);
+        renderFormationPickers();
+      });
+      grid.appendChild(btn);
+    });
+    const svgEl = document.getElementById(previewSvgId);
+    const nameEl = document.getElementById(previewNameId);
+    if(svgEl) buildFormationSVG(svgEl, getFormation(), mirrored, color);
+    if(nameEl) nameEl.textContent = getFormation();
+  }
+
+  // P1 always attacks rightward and P2 leftward in this game, so mirror P2's
+  // preview to match how it'll actually look on the pitch.
+  build(gridP1, ()=>p1Formation, (v)=>{p1Formation=v;}, 'formPreviewP1', 'formPreviewNameP1', false, p1KitColor);
+  build(gridP2, ()=>p2Formation, (v)=>{p2Formation=v;}, 'formPreviewP2', 'formPreviewNameP2', true, p2KitColor);
+}
+
+function formationX(depth, team){
+  return team.defendGoalX===0 ? depth : (PITCH_W - depth);
+}
+function opponentOf(team){ return team===blueTeam?redTeam:blueTeam; }
+
+function initTeamPlayers(team, formationKey){
+  const layout = FORMATIONS[formationKey] || FORMATIONS['4-4-2'];
+  team.players = layout.map((f)=>({
+    team: team,
+    role: f.role,
+    number: f.num,
+    homeD: f.d, homeY: f.y,
+    x: formationX(f.d,team), y: f.y,
+    vx:0, vy:0,
+    facing: team.attackDir>0?0:Math.PI,
+    hasBall:false,
+    isHumanNow:false,
+    controlledBy:null,
+    sentOff:false,
+    yellow:false,
+  }));
+}
+
+function getAllPlayers(){ return blueTeam.players.concat(redTeam.players); }
+
+function placeFormation(team){
+  team.players.forEach(p=>{
+    if(p.sentOff){ p.x=-500; p.y=-500; return; }
+    p.x = formationX(p.homeD, team);
+    p.y = p.homeY;
+    p.vx=0; p.vy=0;
+    p.hasBall=false;
+    p.facing = team.attackDir>0?0:Math.PI;
+  });
+}
+
+function nearestPlayerToPoint(team, x, y){
+  let best=null,bd=Infinity;
+  team.players.forEach(p=>{
+    if(p.sentOff) return;
+    const d=Math.hypot(p.x-x,p.y-y);
+    if(d<bd){bd=d;best=p;}
+  });
+  return best;
+}
+
+/* ============================== BALL ============================== */
+let ball = {x:PITCH_W/2,y:PITCH_H/2,vx:0,vy:0,owner:null,lastTouchTeam:null,lastTouchPlayer:null,lastKicker:null,kickCooldown:0};
+
+function setPossession(p){
+  if(p.sentOff) return;
+  ball.owner=p; p.hasBall=true;
+  getAllPlayers().forEach(o=>{ if(o!==p) o.hasBall=false; });
+  ball.lastTouchTeam=p.team; ball.lastTouchPlayer=p;
+  if(restartRestrictedPlayer && p!==restartRestrictedPlayer) restartRestrictedPlayer=null;
+  sfxKick();
+}
+function releaseBall(p){
+  ball.owner=null; p.hasBall=false;
+  ball.x = p.x + Math.cos(p.facing)*14;
+  ball.y = p.y + Math.sin(p.facing)*14;
+  // Prevent the kicker from instantly re-trapping their own pass/shot
+  // before it has a chance to travel - this is what let players "pass"
+  // to themselves and never actually release the ball.
+  ball.lastKicker = p;
+  ball.kickCooldown = 0.45;
+}
+
+/* ============================== GAME STATE ============================== */
+let phase = 'MODE'; // MODE, START, FORMATION, KICKOFF, PLAY, THROWIN, CORNER, GOALKICK, FREEKICK, OFFSIDE, PENALTY, GOAL, HALFTIME, FULLTIME, PAUSED
+let prevPhaseForPause = 'PLAY';
+let half = 1;
+let matchClock = 0;
+let restartTimer = 0;
+let restart = {team:null, type:null, x:0, y:0};
+let restartGrace = 0;
+let goalTimer = 0;
+let kickoffTimer = 0;
+let lastConcedingTeam = null;
+let firstHalfKicker = null;
+let cardBannerTimer = 0;
+
+// After a kickoff, goal kick, throw-in, or corner, the player who receives
+// the restart must pass to a teammate before either side can shoot - this
+// stops cheap instant goals straight off a dead ball. Direct free kicks and
+// penalties are exempt (they're allowed to be struck straight at goal).
+let restartRestrictedPlayer = null;
+let restartRestrictedTimer = 0;
+function setPassRestriction(player){ restartRestrictedPlayer = player; }
+
+const keys = {};
+
+/* ============================== INPUT ============================== */
+// Pass and shoot are now separate dedicated buttons (previously a single
+// button disambiguated by tap-vs-hold timing, which felt "confused" in
+// fast-paced moments). Either button still attempts a tackle when you
+// don't have the ball, so defending stays simple.
+let p1Charging=false, p1ChargeStart=0;
+let p2Charging=false, p2ChargeStart=0;
+
+const P1_PASS='Space', P1_SHOOT='KeyE';
+const P2_PASS='Enter', P2_SHOOT='Slash';
+
+window.addEventListener('keydown', (e)=>{
+  ensureAudio();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Slash'].includes(e.code)) e.preventDefault();
+  if(keys[e.code]) return; // ignore auto-repeat
+  keys[e.code]=true;
+
+  if(phase==='MODE' && (e.code==='Enter'||e.code==='Space')){ confirmMode(); return; }
+  if(phase==='START' && (e.code==='Enter'||e.code==='Space')){ showFormationScreen(); return; }
+  if(phase==='FORMATION' && (e.code==='Enter'||e.code==='Space')){ startMatch(); return; }
+  if(phase==='HALFTIME' && (e.code==='Enter'||e.code==='Space')){ beginSecondHalf(); return; }
+  if(phase==='FULLTIME' && (e.code==='Enter'||e.code==='Space')){ resetGame(); return; }
+
+  if(e.code==='KeyP' && (phase==='PLAY' || phase==='PAUSED' || ['THROWIN','CORNER','GOALKICK','FREEKICK','OFFSIDE','PENALTY'].includes(phase))){
+    togglePause();
+    return;
+  }
+
+  if(phase!=='PLAY') return;
+
+  if(e.code===P1_PASS){
+    const cp = getControlledPlayer(blueTeam);
+    if(cp.hasBall){ doPass(cp); } else { attemptTackle(cp); }
+  }
+  if(e.code===P1_SHOOT){
+    const cp = getControlledPlayer(blueTeam);
+    if(cp.hasBall){
+      if(cp===restartRestrictedPlayer){ doPass(cp); } // must build up play before shooting
+      else { p1Charging=true; p1ChargeStart=performance.now(); }
+    } else { attemptTackle(cp); }
+  }
+  if(e.code===P2_PASS && gameMode!=='1P'){
+    const cp = getControlledPlayer(redTeam);
+    if(cp.hasBall){ doPass(cp); } else { attemptTackle(cp); }
+  }
+  if(e.code===P2_SHOOT && gameMode!=='1P'){
+    const cp = getControlledPlayer(redTeam);
+    if(cp.hasBall){
+      if(cp===restartRestrictedPlayer){ doPass(cp); }
+      else { p2Charging=true; p2ChargeStart=performance.now(); }
+    } else { attemptTackle(cp); }
+  }
+});
+
+window.addEventListener('keyup', (e)=>{
+  keys[e.code]=false;
+  if(e.code===P1_SHOOT && p1Charging){
+    p1Charging=false;
+    const held=(performance.now()-p1ChargeStart)/1000;
+    const cp = getControlledPlayer(blueTeam);
+    if(cp.hasBall) doShoot(cp,held);
+  }
+  if(e.code===P2_SHOOT && p2Charging && gameMode!=='1P'){
+    p2Charging=false;
+    const held=(performance.now()-p2ChargeStart)/1000;
+    const cp = getControlledPlayer(redTeam);
+    if(cp.hasBall) doShoot(cp,held);
+  }
+});
+
+function togglePause(){
+  if(phase==='PAUSED'){
+    phase = prevPhaseForPause;
+    document.getElementById('pauseScreen').style.display='none';
+  } else {
+    prevPhaseForPause = phase;
+    phase='PAUSED';
+    document.getElementById('pauseScreen').style.display='flex';
+  }
+}
+
+/* ============================== CONTROL SELECTION ============================== */
+function getControlledPlayer(team){
+  // The goalkeeper is NEVER human-controlled - control used to jump to them
+  // whenever they were nearest the ball (i.e. exactly during a shot on goal),
+  // which switched off their auto-save AI right when it mattered most and
+  // handed a slow manual reaction to the player instead. The keeper now always
+  // plays itself; the human always controls an outfield player.
+  const withBall = team.players.find(p=>p.hasBall && !p.sentOff && p.role!=='GK');
+  if(withBall) return withBall;
+  let best=null,bd=Infinity;
+  team.players.forEach(p=>{
+    if(p.sentOff || p.role==='GK') return;
+    const d=dist(p,ball);
+    if(d<bd){bd=d;best=p;}
+  });
+  if(best) return best;
+  // Extreme fallback (every outfield player somehow unavailable) - better to
+  // control the keeper than return nothing.
+  return team.players.find(p=>!p.sentOff) || null;
+}
+
+function readInputsAndMove(dt){
+  getAllPlayers().forEach(p=>{ p.isHumanNow=false; p.controlledBy=null; });
+
+  const cp1 = getControlledPlayer(blueTeam);
+  const cp2 = getControlledPlayer(redTeam);
+  if(cp1){ cp1.isHumanNow=true; cp1.controlledBy='P1'; }
+  if(cp2){ cp2.isHumanNow=true; cp2.controlledBy='P2'; }
+
+  if(cp1){
+    let dx=0,dy=0;
+    if(keys['KeyW'])dy-=1; if(keys['KeyS'])dy+=1;
+    if(keys['KeyA'])dx-=1; if(keys['KeyD'])dx+=1;
+    const restricted1 = cp1.hasBall && cp1===restartRestrictedPlayer;
+    const speedMult1 = restricted1 ? 0 : (p1Charging ? 0.5 : 1);
+    moveHuman(cp1,dx,dy, !!keys['ShiftLeft'], speedMult1);
+  }
+  if(cp2){
+    if(gameMode==='1P'){
+      updateAIController(cp2, redTeam, dt);
+    } else {
+      let dx=0,dy=0;
+      if(keys['ArrowUp'])dy-=1; if(keys['ArrowDown'])dy+=1;
+      if(keys['ArrowLeft'])dx-=1; if(keys['ArrowRight'])dx+=1;
+      const restricted2 = cp2.hasBall && cp2===restartRestrictedPlayer;
+      const speedMult2 = restricted2 ? 0 : (p2Charging ? 0.5 : 1);
+      moveHuman(cp2,dx,dy, !!keys['ShiftRight'], speedMult2);
+    }
+  }
+}
+
+function moveHuman(p,dx,dy,sprint,speedMult){
+  const len=Math.hypot(dx,dy);
+  if(len>0){
+    dx/=len; dy/=len;
+    // speedMult 0 = fully frozen (must-pass restart restriction - can still
+    // turn to aim a pass but mustn't advance at all). speedMult <1 while
+    // charging a shot slows you down rather than freezing you solid, so
+    // aiming still works but you're not a helpless sitting duck for a tackle.
+    if(speedMult > 0){
+      const spd = CONFIG.playerSpeed*(sprint?CONFIG.sprintMult:1)*speedMult;
+      p.x += dx*spd; p.y += dy*spd;
+    }
+    p.facing = Math.atan2(dy,dx);
+  }
+}
+
+/* ============================== AI OPPONENT (1-PLAYER MODE) ============================== */
+// Drives the "active" player on the computer's team exactly the way a human
+// would via the keyboard - deciding when to dribble, pass, shoot, or tackle -
+// while every other teammate keeps using the normal positional AI untouched.
+let aiDecisionTimer = 0;
+let aiTackleTimer = 0;
+
+function updateAIController(cp, team, dt){
+  if(cp.hasBall){
+    aiHandlePossession(cp, team, dt);
+  } else {
+    aiHandleChasing(cp, team, dt);
+  }
+}
+
+function aiHandlePossession(cp, team, dt){
+  // Must-pass restart restriction applies to the AI exactly like a human -
+  // position is frozen, so just get the pass away (with a short human-like
+  // reaction delay instead of an instant robotic release).
+  if(restartRestrictedPlayer===cp){
+    aiDecisionTimer -= dt;
+    if(aiDecisionTimer<=0){
+      doPass(cp);
+      aiDecisionTimer = 0.3+Math.random()*0.3;
+    }
+    return;
+  }
+
+  const goalX = team.attackDir>0 ? PITCH_W : 0;
+  const advance = team.attackDir>0 ? cp.x : (PITCH_W-cp.x);
+  const opp = opponentOf(team);
+  let nearestOppDist = Infinity;
+  opp.players.forEach(o=>{ if(o.sentOff) return; const d=dist(o,cp); if(d<nearestOppDist) nearestOppDist=d; });
+
+  aiDecisionTimer -= dt;
+  if(aiDecisionTimer<=0){
+    aiDecisionTimer = 0.35+Math.random()*0.3;
+    const inShootingRange = advance > 640;
+    if(inShootingRange && Math.random()<0.78){
+      aiShoot(cp, team);
+    } else if(nearestOppDist < 45 || Math.random()<0.3){
+      const target = findPassTarget(cp);
+      if(target) doPass(cp);
+    }
+  }
+
+  aiDribbleMovement(cp, team, nearestOppDist);
+}
+
+function aiDribbleMovement(cp, team, nearestOppDist){
+  const goalX = team.attackDir>0 ? PITCH_W : 0;
+  const goalY = PITCH_H/2;
+  let dx = goalX-cp.x, dy = goalY-cp.y;
+  const opp = opponentOf(team);
+  let nearest=null, nd=Infinity;
+  opp.players.forEach(o=>{ if(o.sentOff) return; const d=dist(o,cp); if(d<nd){ nd=d; nearest=o; } });
+  if(nearest && nd<75){
+    // steer away from the closest defender rather than running straight at them
+    const ax=cp.x-nearest.x, ay=cp.y-nearest.y;
+    const ad=Math.hypot(ax,ay)||1;
+    dx += (ax/ad)*100; dy += (ay/ad)*100;
+  }
+  const d = Math.hypot(dx,dy)||1;
+  dx/=d; dy/=d;
+  const spd = CONFIG.playerSpeed*0.95;
+  cp.x += dx*spd; cp.y += dy*spd;
+  cp.facing = Math.atan2(dy,dx);
+}
+
+function aiHandleChasing(cp, team, dt){
+  const dx=ball.x-cp.x, dy=ball.y-cp.y;
+  const d=Math.hypot(dx,dy)||1;
+  const spd = CONFIG.playerSpeed*CONFIG.sprintMult*0.92;
+  cp.x += dx/d*spd; cp.y += dy/d*spd;
+  cp.facing = Math.atan2(dy,dx);
+
+  aiTackleTimer -= dt;
+  if(ball.owner && ball.owner.team!==team && aiTackleTimer<=0){
+    if(dist(cp, ball.owner) < CONFIG.tackleRange*0.95){
+      attemptTackle(cp);
+      aiTackleTimer = 0.45+Math.random()*0.3;
+    }
+  }
+}
+
+function aiShoot(cp, team){
+  const opp = opponentOf(team);
+  const gk = opp.players.find(p=>p.role==='GK');
+  // Aim toward whichever side of goal the keeper is currently NOT covering.
+  const steerDir = gk ? (gk.y > PITCH_H/2 ? -1 : 1) : (Math.random()<0.5?-1:1);
+  const magnitude = 0.55+Math.random()*0.35;
+  cp.facing = steerDir*(Math.PI/2)*magnitude;
+  const held = 0.5+Math.random()*0.25;
+  doShoot(cp, held);
+}
+
+/* ============================== AI MOVEMENT ============================== */
+function moveToward(p,tx,ty,spd){
+  const dx=tx-p.x, dy=ty-p.y;
+  const d=Math.hypot(dx,dy);
+  if(d>2){
+    p.x += dx/d*spd; p.y += dy/d*spd;
+    p.facing = Math.atan2(dy,dx);
+  }
+}
+
+function updateAIMovement(p){
+  const team=p.team, opp=opponentOf(team);
+  const teamHasBall = ball.owner && ball.owner.team===team;
+  const oppHasBall = ball.owner && ball.owner.team===opp;
+  const shiftX=(ball.x-PITCH_W/2)*0.16;
+  const shiftY=(ball.y-PITCH_H/2)*0.10;
+  const baseX=formationX(p.homeD,team), baseY=p.homeY;
+
+  if(p.role==='GK'){
+    const ownGoalX = team.defendGoalX===0 ? 0 : PITCH_W;
+    const lineX = team.defendGoalX===0 ? 20 : PITCH_W-20;
+    const distToGoalX = Math.abs(ball.x-ownGoalX);
+    // Only fully mirror the ball's height once it's actually in the danger
+    // zone near this goal. Previously the keeper tracked ball.y perfectly
+    // from anywhere on the pitch, so it was always already in place before
+    // a shot even arrived - making it nearly impossible to beat.
+    const trackFactor = clamp(1 - (distToGoalX-150)/350, 0.15, 1);
+    let tx=lineX, ty=clamp(PITCH_H/2 + (ball.y-PITCH_H/2)*trackFactor, GOAL_Y1+23, GOAL_Y2-23);
+    const distToGoal = Math.hypot(ball.x-ownGoalX, ball.y-PITCH_H/2);
+    const ballSpeed = Math.hypot(ball.vx,ball.vy);
+    // Only rush off the line for a genuinely loose/slow ball nearby (through
+    // balls, knockdowns, dribbles) - not to meet a fast struck shot, which a
+    // real keeper sets and reacts to rather than charging out to close down.
+    if(!ball.owner && distToGoal < 90 && ballSpeed < 3.5){
+      tx = clamp(ball.x, team.defendGoalX===0?4:PITCH_W-100, team.defendGoalX===0?100:PITCH_W-4);
+      ty = clamp(ball.y, GOAL_Y1-20, GOAL_Y2+20);
+    }
+    moveToward(p, tx, ty, CONFIG.playerSpeed*1.05);
+    return;
+  }
+
+  let targetX, targetY;
+  if(teamHasBall){
+    targetX = baseX + team.attackDir*45 + shiftX*0.6;
+    targetY = baseY + shiftY*0.6;
+  } else if(oppHasBall){
+    targetX = baseX - team.attackDir*15 + shiftX*0.35;
+    targetY = baseY + shiftY*0.35;
+  } else {
+    targetX = baseX + shiftX*0.5;
+    targetY = baseY + shiftY*0.5;
+  }
+  targetX = clamp(targetX, 15, PITCH_W-15);
+  targetY = clamp(targetY, 10, PITCH_H-10);
+  moveToward(p, targetX, targetY, CONFIG.playerSpeed*0.9);
+}
+
+function clampAllPlayers(){
+  getAllPlayers().forEach(p=>{
+    if(p.sentOff) return;
+    p.x = clamp(p.x, -25, PITCH_W+25);
+    p.y = clamp(p.y, -25, PITCH_H+25);
+  });
+}
+
+function resolveCollisions(){
+  const all = getAllPlayers().filter(p=>!p.sentOff);
+  for(let i=0;i<all.length;i++){
+    for(let j=i+1;j<all.length;j++){
+      const a=all[i], b=all[j];
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const d=Math.hypot(dx,dy);
+      const minD=13;
+      if(d>0 && d<minD){
+        const overlap=(minD-d)/2;
+        const nx=dx/d, ny=dy/d;
+        a.x -= nx*overlap; a.y -= ny*overlap;
+        b.x += nx*overlap; b.y += ny*overlap;
+      }
+    }
+  }
+}
+
+/* ============================== BALL LOGIC ============================== */
+function updateBallCarry(){
+  if(ball.owner && !ball.owner.sentOff){
+    const p=ball.owner;
+    ball.x = p.x + Math.cos(p.facing)*11;
+    ball.y = p.y + Math.sin(p.facing)*11;
+    ball.vx=0; ball.vy=0;
+  } else if(ball.owner && ball.owner.sentOff){
+    ball.owner=null;
+  }
+}
+
+function updateBallPossessionCheck(dt){
+  if(ball.kickCooldown>0) ball.kickCooldown = Math.max(0, ball.kickCooldown-dt);
+  if(ball.owner) return;
+  let best=null, bd=Infinity;
+  getAllPlayers().forEach(p=>{
+    if(p.sentOff) return;
+    if(ball.kickCooldown>0 && p===ball.lastKicker) return; // can't instantly re-trap your own kick
+    const radius = p.role==='GK'?CONFIG.gkControlRadius:CONFIG.controlRadius;
+    const d=dist(p,ball);
+    if(d<radius && d<bd){ bd=d; best=p; }
+  });
+  if(best) setPossession(best);
+}
+
+function updateBallFreeMotion(){
+  if(ball.owner) return;
+  ball.x += ball.vx; ball.y += ball.vy;
+  ball.vx *= CONFIG.ballFriction; ball.vy *= CONFIG.ballFriction;
+  if(Math.hypot(ball.vx,ball.vy) < 0.04){ ball.vx=0; ball.vy=0; }
+}
+
+/* ============================== PASS / SHOOT / TACKLE ============================== */
+function findPassTarget(p){
+  const team=p.team;
+  let best=null,bestScore=-Infinity;
+  team.players.forEach(o=>{
+    if(o===p||o.sentOff) return;
+    const dx=o.x-p.x, dy=o.y-p.y;
+    const d=Math.hypot(dx,dy);
+    if(d<12) return;
+    const ang=Math.atan2(dy,dx);
+    const diff=angleDiffAbs(ang,p.facing);
+    if(diff>Math.PI/2.1) return;
+    const score = -diff*140 - d*0.12;
+    if(score>bestScore){ bestScore=score; best=o; }
+  });
+  if(!best){
+    let bd=Infinity;
+    team.players.forEach(o=>{
+      if(o===p||o.sentOff) return;
+      const d=dist(o,p);
+      if(d<bd){ bd=d; best=o; }
+    });
+  }
+  return best;
+}
+
+function doPass(p){
+  const target = findPassTarget(p);
+  releaseBall(p);
+  if(!target) return;
+  const dx=target.x-ball.x, dy=target.y-ball.y;
+  const d=Math.hypot(dx,dy)||1;
+  const power = Math.min(CONFIG.passPower, 4 + d*0.028);
+  ball.vx = dx/d*power; ball.vy = dy/d*power;
+  p.facing = Math.atan2(dy,dx);
+  sfxKick();
+  checkOffsideOnPass(p, target);
+}
+
+// Shared by doShoot and the live aim-preview renderer so what you see while
+// charging is exactly where the ball will go.
+const SHOT_MAX_OFFSET = 34;
+function computeShotTarget(p){
+  const team=p.team;
+  const goalX = team.attackDir>0 ? PITCH_W : 0;
+  const steer = Math.sin(p.facing); // -1 (up) .. 1 (down)
+  const targetY = clamp(PITCH_H/2 + steer*SHOT_MAX_OFFSET, 20, PITCH_H-20);
+  return {x:goalX, y:targetY};
+}
+
+function doShoot(p, held){
+  // Aim at a specific point on the goal line rather than extrapolating a raw
+  // angle from the player's facing - a raw-angle blend was wildly oversensitive
+  // to shooting distance (a small directional tap from outside the box sent
+  // the ball miles over the bar). Steer up/down within (and slightly beyond,
+  // so wild aiming can still miss) the goal frame using facing's vertical
+  // component, then aim straight at that point. Position is locked while
+  // charging (see moveHuman) so holding W/S/Up/Down purely aims rather than
+  // also running you off in that direction.
+  const target = computeShotTarget(p);
+  const power = CONFIG.shotPowerMax * clamp(held/0.75, 0.35, 1);
+  releaseBall(p);
+  const dx = target.x - ball.x, dy = target.y - ball.y;
+  const d = Math.hypot(dx,dy) || 1;
+  ball.vx = dx/d*power;
+  ball.vy = dy/d*power;
+  sfxShoot(power);
+}
+
+// The goalkeeper is never human-controlled (see getControlledPlayer), so once
+// it gathers the ball it needs its own simple logic to give it back into play
+// - otherwise the keeper would just stand there holding it forever. It holds
+// briefly (like gathering a shot) then distributes to its most advanced
+// available teammate.
+let gkHoldTimer = 0;
+function gkDistribute(gk){
+  const team=gk.team;
+  let target=null, bestAdv=-Infinity;
+  team.players.forEach(o=>{
+    if(o===gk||o.sentOff) return;
+    const adv = team.attackDir>0 ? o.x : -o.x;
+    if(adv>bestAdv){ bestAdv=adv; target=o; }
+  });
+  if(!target) return;
+  releaseBall(gk);
+  const dx=target.x-ball.x, dy=target.y-ball.y;
+  const d=Math.hypot(dx,dy)||1;
+  const power = Math.min(CONFIG.passPower*1.35, 5+d*0.03);
+  ball.vx = dx/d*power; ball.vy = dy/d*power;
+  gk.facing = Math.atan2(dy,dx);
+  sfxKick();
+}
+
+const OFFSIDE_TOLERANCE = 6; // small buffer so marginal/jittery positions don't get flagged
+
+function checkOffsideOnPass(passer, target){
+  if(!target) return;
+  const team=passer.team, opp=opponentOf(team);
+  const dir=team.attackDir;
+  // "advance" = how far a player has progressed toward the ATTACKING team's target goal.
+  const advance = (pl)=> dir>0 ? pl.x : (PITCH_W-pl.x);
+
+  if(advance(target) <= PITCH_W/2) return; // must be in opponent half
+
+  const defenders = opp.players.filter(o=>!o.sentOff);
+  if(defenders.length<2) return;
+  // Sort ascending: the LAST defender (closest to their own goal, hardest to get
+  // beyond) has the HIGHEST advance value, so it sits at the end of this list.
+  // The offside line is the SECOND-highest value (second-last defender, usually
+  // the deepest outfield player once the GK is excluded from being "beaten").
+  const advances = defenders.map(advance).sort((a,b)=>a-b);
+  const offsideLine = advances[advances.length-2];
+  const ballAdvance = advance(passer);
+
+  if(advance(target) > offsideLine + OFFSIDE_TOLERANCE && advance(target) > ballAdvance + OFFSIDE_TOLERANCE){
+    callOffside(opp, target.x, target.y);
+  }
+}
+
+function callOffside(defendingTeam, x, y){
+  sfxWhistle();
+  startRestart('OFFSIDE', defendingTeam, clamp(x,20,PITCH_W-20), clamp(y,20,PITCH_H-20));
+}
+
+function isInsidePenaltyBox(x, y, team){
+  // team's OWN box (the one they defend)
+  const boxX0 = team.defendGoalX===0 ? 0 : PITCH_W-PBOX_DEPTH;
+  const boxX1 = team.defendGoalX===0 ? PBOX_DEPTH : PITCH_W;
+  return x>=boxX0 && x<=boxX1 && y>=PBOX_Y1 && y<=PBOX_Y2;
+}
+function penaltySpotX(team){
+  return team.defendGoalX===0 ? PEN_SPOT_X : PITCH_W-PEN_SPOT_X;
+}
+
+function attemptTackle(tackler){
+  if(!ball.owner || ball.owner.team===tackler.team || ball.owner.sentOff) return;
+  const opp = ball.owner;
+  const d = Math.hypot(opp.x-tackler.x, opp.y-tackler.y);
+  if(d > CONFIG.tackleRange) return;
+
+  const vecOppToTackler = Math.atan2(tackler.y-opp.y, tackler.x-opp.x);
+  const behindAngle = opp.facing + Math.PI;
+  const diff = angleDiffAbs(vecOppToTackler, behindAngle);
+  const fromBehind = diff < Math.PI/3;
+
+  let successChance = 0.52 - (fromBehind?0.28:0) + (Math.random()*0.3 - 0.15);
+  successChance = clamp(successChance, 0.05, 0.85);
+
+  if(Math.random() < successChance){
+    setPossession(tackler);
+  } else {
+    let card=null;
+    const severity = Math.random() + (fromBehind?0.35:0);
+    if(severity > 1.15){
+      card = tackler.yellow ? 'red' : 'yellow';
+    } else if(severity > 0.85 && Math.random() < 0.35){
+      card = 'yellow';
+    }
+    if(isInsidePenaltyBox(opp.x, opp.y, tackler.team)){
+      startRestart('PENALTY', opp.team, penaltySpotX(tackler.team), PITCH_H/2);
+    } else {
+      startRestart('FREEKICK', opp.team, opp.x, opp.y);
+    }
+    if(card) bookPlayer(tackler, card);
+    sfxWhistle();
+  }
+}
+
+function bookPlayer(player, card){
+  if(card==='yellow'){
+    if(player.yellow){
+      sendOff(player);
+      showCardBanner(player, 'SECOND YELLOW - RED CARD');
+    } else {
+      player.yellow=true;
+      showCardBanner(player, 'YELLOW CARD');
+    }
+  } else if(card==='red'){
+    sendOff(player);
+    showCardBanner(player, 'RED CARD');
+  }
+  sfxCard();
+}
+function sendOff(player){
+  player.sentOff=true;
+  player.hasBall=false;
+  if(ball.owner===player) ball.owner=null;
+  player.x=-500; player.y=-500;
+}
+function showCardBanner(player,label){
+  const el=document.getElementById('cardBanner');
+  el.innerHTML = '<span style="color:'+player.team.color+'">'+player.team.label+'</span>' +
+                 ' #'+player.number+' &mdash; '+label;
+  el.style.display='block';
+  cardBannerTimer = 2.4;
+}
+function updateCardBannerTimer(dt){
+  if(cardBannerTimer>0){
+    cardBannerTimer -= dt;
+    if(cardBannerTimer<=0) document.getElementById('cardBanner').style.display='none';
+  }
+}
+
+/* ============================== OUT OF BOUNDS / GOALS ============================== */
+function teamDefending(goalX){ return blueTeam.defendGoalX===goalX ? blueTeam : redTeam; }
+
+function checkGoalAndOutOfBounds(){
+  if(['PLAY'].indexOf(phase)===-1) return;
+
+  if(ball.y < 0 || ball.y > PITCH_H){
+    const throwTeam = ball.lastTouchTeam===blueTeam ? redTeam : blueTeam;
+    const spotX = clamp(ball.x, 15, PITCH_W-15);
+    const spotY = ball.y<0 ? 4 : PITCH_H-4;
+    sfxOut();
+    startRestart('THROWIN', throwTeam, spotX, spotY);
+    return;
+  }
+
+  if(ball.x < 0){
+    if(ball.y > GOAL_Y1 && ball.y < GOAL_Y2){
+      handleGoal(teamDefending(0)===blueTeam?redTeam:blueTeam);
+      return;
+    }
+    handleGoalLineOut(0);
+    return;
+  }
+  if(ball.x > PITCH_W){
+    if(ball.y > GOAL_Y1 && ball.y < GOAL_Y2){
+      handleGoal(teamDefending(PITCH_W)===blueTeam?redTeam:blueTeam);
+      return;
+    }
+    handleGoalLineOut(PITCH_W);
+    return;
+  }
+}
+
+function handleGoalLineOut(goalX){
+  const defendingTeam = teamDefending(goalX);
+  const attackingTeam = opponentOf(defendingTeam);
+  const topHalf = ball.y < PITCH_H/2;
+  sfxOut();
+  if(ball.lastTouchTeam===defendingTeam){
+    // corner for attacking team
+    const cx = goalX===0 ? 4 : PITCH_W-4;
+    const cy = topHalf ? 4 : PITCH_H-4;
+    startRestart('CORNER', attackingTeam, cx, cy);
+  } else {
+    // goal kick for defending team
+    const gx = goalX===0 ? GBOX_DEPTH-5 : PITCH_W-GBOX_DEPTH+5;
+    const gy = clamp(ball.y, GBOX_Y1+10, GBOX_Y2-10);
+    startRestart('GOALKICK', defendingTeam, gx, gy);
+  }
+}
+
+function handleGoal(scoringTeam){
+  scoringTeam.score++;
+  lastConcedingTeam = opponentOf(scoringTeam);
+  phase='GOAL';
+  goalTimer=2.6;
+  ball.vx=0; ball.vy=0;
+  sfxGoal();
+  sfxCrowdCheer();
+  showBanner('GOAL!', scoringTeam.label+' SCORES  '+blueTeam.score+' - '+redTeam.score);
+  updateScoreboard();
+}
+
+/* ============================== RESTARTS ============================== */
+function startRestart(type, team, x, y){
+  phase = type;
+  restart.team=team; restart.type=type; restart.x=clamp(x,4,PITCH_W-4); restart.y=clamp(y,4,PITCH_H-4);
+  ball.vx=0; ball.vy=0; ball.owner=null;
+  restartTimer = (type==='PENALTY') ? 1.7 : 1.3;
+  const labelMap = {
+    THROWIN:'THROW-IN', CORNER:'CORNER', GOALKICK:'GOAL KICK',
+    FREEKICK:'FOUL - FREE KICK', OFFSIDE:'OFFSIDE', PENALTY:'PENALTY!'
+  };
+  showBanner(labelMap[type], team.label+' BALL');
+}
+
+// Opponents must give the restart team room to take a throw-in/free kick/
+// corner/penalty properly - mirrors the real 10-yard rule so the taker
+// doesn't get swarmed and dispossessed the instant play resumes.
+function enforceRestartSpacing(){
+  const minDist = restart.type==='PENALTY' ? 160 : 68;
+  getAllPlayers().forEach(p=>{
+    if(p.sentOff) return;
+    if(p.team===restart.team) return; // only opponents must retreat
+    if(restart.type==='PENALTY' && p.role==='GK') return; // keeper must stay to defend
+    const dx=p.x-restart.x, dy=p.y-restart.y;
+    let d=Math.hypot(dx,dy);
+    if(d < minDist){
+      if(d < 0.01){ p.x = restart.x+minDist; p.y = restart.y; }
+      else{ p.x = restart.x + (dx/d)*minDist; p.y = restart.y + (dy/d)*minDist; }
+    }
+  });
+  clampAllPlayers();
+}
+
+function finishRestart(){
+  ball.x = restart.x; ball.y = restart.y;
+  ball.vx=0; ball.vy=0;
+  const receiver = nearestPlayerToPoint(restart.team, restart.x, restart.y);
+  if(receiver){
+    const ang = Math.atan2(restart.y-receiver.y, restart.x-receiver.x);
+    receiver.x = restart.x - Math.cos(ang)*10;
+    receiver.y = restart.y - Math.sin(ang)*10;
+    setPossession(receiver);
+    // Every dead-ball restart now requires an actual pass before the taker
+    // can shoot OR dribble forward themselves.
+    setPassRestriction(receiver);
+  }
+  phase='PLAY';
+  restartGrace = 1.1; // keep opponents at arm's length for a moment after play resumes
+  hideBanner();
+}
+
+/* ============================== BANNER / HUD ============================== */
+function showBanner(big, small){
+  document.getElementById('bannerBig').textContent = big;
+  document.getElementById('bannerSmall').textContent = small||'';
+  document.getElementById('banner').style.display='block';
+}
+function hideBanner(){
+  document.getElementById('banner').style.display='none';
+}
+function updateScoreboard(){
+  document.getElementById('scoreBlue').textContent = blueTeam.score;
+  document.getElementById('scoreRed').textContent = redTeam.score;
+  const l1 = document.getElementById('scoreLabelP1');
+  const l2 = document.getElementById('scoreLabelP2');
+  if(l1){ l1.textContent = blueTeam.label; l1.style.color = blueTeam.color; }
+  if(l2){ l2.textContent = redTeam.label; l2.style.color = redTeam.color; }
+}
+function formatClock(elapsed, halfNum){
+  const totalMin = 45;
+  const frac = clamp(elapsed/CONFIG.halfLengthSeconds,0,1);
+  const rawMin = frac*totalMin;
+  let displayMin = Math.floor(rawMin) + (halfNum===2?45:0);
+  let displaySec = Math.floor((rawMin*60)%60);
+  return String(displayMin).padStart(2,'0')+':'+String(displaySec).padStart(2,'0');
+}
+function updateClockDisplay(){
+  document.getElementById('clockBox').textContent = formatClock(matchClock, half);
+  document.getElementById('halfBox').textContent = half===1?'1ST HALF':'2ND HALF';
+}
+
+/* ============================== GAME FLOW ============================== */
+// Kept true from kickoff until the taker actually passes the ball away
+// (tracked via the same pass-restriction system, not a fixed timer - a timer
+// let players cross into the opponent's half if the human simply hadn't
+// kicked off yet by the time it expired). kickoffSafetyTimer is just a
+// failsafe in case something else clears the restriction unexpectedly.
+let kickoffPending = false;
+let kickoffTakerRef = null;
+let kickoffSafetyTimer = 0;
+
+function enforceOwnHalfAtKickoff(){
+  // Forwards' normal formation spot sits in the attacking third, i.e. the
+  // opponent's half - fine during open play, but at a kickoff everyone must
+  // be on their own side of the halfway line.
+  [blueTeam, redTeam].forEach(team=>{
+    team.players.forEach(p=>{
+      if(p.sentOff) return;
+      if(team.attackDir>0){
+        if(p.x >= PITCH_W/2) p.x = PITCH_W/2 - 10 - Math.random()*30;
+      } else {
+        if(p.x <= PITCH_W/2) p.x = PITCH_W/2 + 10 + Math.random()*30;
+      }
+    });
+  });
+}
+
+// Normal AI movement immediately pulls forwards back toward their usual
+// (opponent-half) attacking position as soon as their team has the ball -
+// which is true the instant a kickoff happens - so the one-off clamp above
+// gets undone within a few frames. Keep re-applying a hard halfway-line
+// constraint for as long as the kickoff hasn't actually been taken yet, so
+// everyone genuinely stays onside until the ball is live.
+function enforceOwnHalfDuringGrace(){
+  [blueTeam, redTeam].forEach(team=>{
+    team.players.forEach(p=>{
+      if(p.sentOff) return;
+      if(team.attackDir>0){
+        if(p.x > PITCH_W/2 - 4) p.x = PITCH_W/2 - 4;
+      } else {
+        if(p.x < PITCH_W/2 + 4) p.x = PITCH_W/2 + 4;
+      }
+    });
+  });
+}
+
+function kickoffSetup(kickingTeam){
+  placeFormation(blueTeam); placeFormation(redTeam);
+  enforceOwnHalfAtKickoff();
+  ball.x=PITCH_W/2; ball.y=PITCH_H/2; ball.vx=0; ball.vy=0; ball.owner=null;
+  const receiver = nearestPlayerToPoint(kickingTeam, ball.x, ball.y);
+  if(receiver){
+    receiver.x = ball.x - kickingTeam.attackDir*14;
+    receiver.y = ball.y;
+    setPossession(receiver);
+    setPassRestriction(receiver);
+    kickoffPending = true;
+    kickoffTakerRef = receiver;
+    kickoffSafetyTimer = 8; // failsafe only - should never actually be hit
+  }
+}
+
+function startMatch(){
+  document.getElementById('formationScreen').style.display='none';
+  blueTeam = makeTeam('P1', p1KitColor, 0);
+  redTeam  = makeTeam(gameMode==='1P' ? 'COM' : 'P2', p2KitColor, PITCH_W);
+  initTeamPlayers(blueTeam, p1Formation);
+  initTeamPlayers(redTeam, p2Formation);
+  half=1; matchClock=0;
+  firstHalfKicker = blueTeam;
+  kickoffSetup(blueTeam);
+  updateScoreboard();
+  phase='PLAY';
+  showBanner('KICK OFF','1ST HALF');
+  setTimeout(()=>{ if(phase==='PLAY') hideBanner(); }, 1200);
+}
+
+function showFormationScreen(){
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('formationScreen').style.display='flex';
+  phase='FORMATION';
+  renderFormationPickers();
+}
+
+function startHalftime(){
+  phase='HALFTIME';
+  // swap ends
+  blueTeam.defendGoalX = blueTeam.defendGoalX===0?PITCH_W:0;
+  redTeam.defendGoalX = redTeam.defendGoalX===0?PITCH_W:0;
+  blueTeam.attackDir = blueTeam.defendGoalX===0?1:-1;
+  redTeam.attackDir = redTeam.defendGoalX===0?1:-1;
+  document.getElementById('htScore').textContent = blueTeam.score+' - '+redTeam.score;
+  document.getElementById('halftimeScreen').style.display='flex';
+}
+function beginSecondHalf(){
+  document.getElementById('halftimeScreen').style.display='none';
+  half=2; matchClock=0;
+  const secondHalfKicker = firstHalfKicker===blueTeam?redTeam:blueTeam;
+  kickoffSetup(secondHalfKicker);
+  phase='PLAY';
+  showBanner('KICK OFF','2ND HALF');
+  setTimeout(()=>{ if(phase==='PLAY') hideBanner(); }, 1200);
+}
+function startFulltime(){
+  phase='FULLTIME';
+  document.getElementById('ftScore').textContent = blueTeam.score+' - '+redTeam.score;
+  let res='DRAW';
+  if(blueTeam.score>redTeam.score) res=blueTeam.label+' WINS';
+  else if(redTeam.score>blueTeam.score) res=redTeam.label+' WINS';
+  document.getElementById('ftResult').textContent = res;
+  document.getElementById('fulltimeScreen').style.display='flex';
+}
+function resetGame(){
+  document.getElementById('fulltimeScreen').style.display='none';
+  document.getElementById('modeScreen').style.display='flex';
+  phase='MODE';
+  restartRestrictedPlayer = null;
+  restartRestrictedTimer = 0;
+  kickoffPending = false;
+  kickoffTakerRef = null;
+  gkHoldTimer = 0;
+}
+
+/* ============================== UPDATE LOOP ============================== */
+function update(dt){
+  if(phase==='PLAY'){
+    matchClock += dt;
+    readInputsAndMove(dt);
+    getAllPlayers().forEach(p=>{ if(!p.sentOff && !p.isHumanNow) updateAIMovement(p); });
+    clampAllPlayers();
+    resolveCollisions();
+    updateBallCarry();
+    updateBallPossessionCheck(dt);
+    updateBallFreeMotion();
+    checkGoalAndOutOfBounds();
+    updateCardBannerTimer(dt);
+    updateClockDisplay();
+    if(ball.owner && ball.owner.role==='GK'){
+      gkHoldTimer += dt;
+      if(gkHoldTimer > 0.7){ gkDistribute(ball.owner); gkHoldTimer = 0; }
+    } else {
+      gkHoldTimer = 0;
+    }
+    if(restartGrace>0){
+      restartGrace -= dt;
+      enforceRestartSpacing();
+    }
+    if(kickoffPending){
+      enforceOwnHalfDuringGrace();
+      kickoffSafetyTimer -= dt;
+      if(restartRestrictedPlayer !== kickoffTakerRef || kickoffSafetyTimer<=0){
+        kickoffPending = false;
+      }
+    }
+    if(restartRestrictedPlayer && ball.owner===restartRestrictedPlayer){
+      restartRestrictedTimer += dt;
+      if(restartRestrictedTimer > 4){
+        doPass(restartRestrictedPlayer); // failsafe so nobody gets stuck frozen forever
+        restartRestrictedTimer = 0;
+      }
+    } else {
+      restartRestrictedTimer = 0;
+    }
+    if(matchClock >= CONFIG.halfLengthSeconds){
+      if(half===1) startHalftime(); else startFulltime();
+    }
+  } else if(phase==='THROWIN'||phase==='CORNER'||phase==='GOALKICK'||phase==='FREEKICK'||phase==='OFFSIDE'||phase==='PENALTY'){
+    restartTimer -= dt;
+    getAllPlayers().forEach(p=>{ if(!p.sentOff) updateAIMovement(p); });
+    clampAllPlayers();
+    resolveCollisions();
+    enforceRestartSpacing();
+    updateCardBannerTimer(dt);
+    if(restartTimer<=0) finishRestart();
+  } else if(phase==='GOAL'){
+    goalTimer -= dt;
+    if(goalTimer<=0){
+      kickoffSetup(lastConcedingTeam);
+      phase='PLAY';
+      hideBanner();
+    }
+  }
+  // START, HALFTIME, FULLTIME, PAUSED: no physics
+}
+
+/* ============================== RENDER ============================== */
+const canvas = document.getElementById('pitchCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+function drawArcSafe(cx,cy,r,a0,a1){
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,a0,a1);
+  ctx.stroke();
+}
+
+function drawPitch(){
+  ctx.save();
+  ctx.translate(MARGIN,MARGIN);
+
+  const stripeW = PITCH_W/10;
+  for(let i=0;i<10;i++){
+    ctx.fillStyle = i%2===0 ? '#2f9142' : '#2a8339';
+    ctx.fillRect(i*stripeW,0,stripeW,PITCH_H);
+  }
+
+  ctx.strokeStyle='rgba(255,255,255,0.92)';
+  ctx.lineWidth=3;
+  ctx.strokeRect(0,0,PITCH_W,PITCH_H);
+
+  ctx.beginPath(); ctx.moveTo(PITCH_W/2,0); ctx.lineTo(PITCH_W/2,PITCH_H); ctx.stroke();
+  ctx.beginPath(); ctx.arc(PITCH_W/2,PITCH_H/2,CENTER_CIRCLE_R,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(PITCH_W/2,PITCH_H/2,3,0,Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+
+  [0,PITCH_W].forEach(goalX=>{
+    const boxX = goalX===0 ? 0 : goalX-PBOX_DEPTH;
+    ctx.strokeRect(boxX, PBOX_Y1, PBOX_DEPTH, PBOX_HEIGHT);
+    const gboxX = goalX===0 ? 0 : goalX-GBOX_DEPTH;
+    ctx.strokeRect(gboxX, GBOX_Y1, GBOX_DEPTH, GBOX_HEIGHT);
+    const spotX = goalX===0 ? PEN_SPOT_X : goalX-PEN_SPOT_X;
+    ctx.beginPath(); ctx.arc(spotX,PITCH_H/2,2.5,0,Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+    if(goalX===0){
+      drawArcSafe(spotX,PITCH_H/2,CENTER_CIRCLE_R,-0.95,0.95);
+    } else {
+      drawArcSafe(spotX,PITCH_H/2,CENTER_CIRCLE_R,Math.PI-0.95,Math.PI+0.95);
+    }
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    ctx.fillRect(goalX===0?-9:goalX, GOAL_Y1, 9, GOAL_W);
+    ctx.strokeRect(goalX===0?-9:goalX, GOAL_Y1, 9, GOAL_W);
+  });
+
+  const cr=11;
+  ctx.beginPath(); ctx.arc(0,0,cr,0,Math.PI/2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(PITCH_W,0,cr,Math.PI/2,Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,PITCH_H,cr,-Math.PI/2,0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(PITCH_W,PITCH_H,cr,Math.PI,Math.PI*1.5); ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawPlayer(p){
+  if(p.sentOff) return;
+  const x=p.x+MARGIN, y=p.y+MARGIN;
+
+  ctx.fillStyle='rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(x,y+7,8,3,0,0,Math.PI*2); ctx.fill();
+
+  const kit = p.role==='GK' ? p.team.gkColor : p.team.color;
+  const shorts = p.team.shorts;
+
+  ctx.save();
+  ctx.translate(x,y);
+
+  ctx.fillStyle='#e8b98a';
+  ctx.fillRect(-3,2,2.4,6);
+  ctx.fillRect(0.6,2,2.4,6);
+
+  ctx.fillStyle=shorts;
+  ctx.fillRect(-4,0,8,4);
+
+  ctx.fillStyle=kit;
+  ctx.fillRect(-4,-7,8,7);
+
+  ctx.fillStyle='#ffffff';
+  ctx.font='5px monospace';
+  ctx.textAlign='center';
+  ctx.fillText(String(p.number),0,-2);
+
+  ctx.fillStyle='#e8b98a';
+  ctx.beginPath(); ctx.arc(0,-10,3.4,0,Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle='rgba(255,255,255,0.85)';
+  ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(Math.cos(p.facing)*9, -10+Math.sin(p.facing)*9); ctx.stroke();
+
+  ctx.restore();
+
+  if(p.controlledBy){
+    ctx.strokeStyle = p.controlledBy==='P1' ? '#ffe14d' : '#4de1ff';
+    ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.arc(x,y-3,11,0,Math.PI*2); ctx.stroke();
+    const bob = Math.sin(performance.now()/150)*3;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.moveTo(x,y-19-bob); ctx.lineTo(x-4,y-25-bob); ctx.lineTo(x+4,y-25-bob); ctx.closePath(); ctx.fill();
+  }
+  if(p.yellow){
+    ctx.fillStyle='#f5d80e';
+    ctx.fillRect(x+6,y-19,3,4);
+  }
+}
+
+function drawBall(){
+  const x=ball.x+MARGIN, y=ball.y+MARGIN;
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x,y+3,4,1.6,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#f5f5f0';
+  ctx.beginPath(); ctx.arc(x,y,4.2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#333'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.arc(x,y,4.2,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='#333';
+  ctx.beginPath(); ctx.arc(x,y,1.2,0,Math.PI*2); ctx.fill();
+}
+
+function drawAimPreview(p, colorHex){
+  const target = computeShotTarget(p);
+  const x = target.x + MARGIN, y = target.y + MARGIN;
+  const pulse = 3 + Math.sin(performance.now()/110)*1.5;
+  ctx.save();
+  ctx.strokeStyle = colorHex;
+  ctx.fillStyle = colorHex;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(x,y,5+pulse,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x,y,1.6,0,Math.PI*2); ctx.fill();
+  // dotted guide line from the shooter to the aim point
+  const sx = p.x+MARGIN, sy = p.y+MARGIN;
+  ctx.setLineDash([3,4]);
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(x,y); ctx.stroke();
+  ctx.restore();
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawPitch();
+  if(blueTeam && redTeam){
+    const all = getAllPlayers().slice().sort((a,b)=>a.y-b.y);
+    all.forEach(drawPlayer);
+    drawBall();
+    if(p1Charging){
+      const cp1 = getControlledPlayer(blueTeam);
+      if(cp1 && cp1.hasBall) drawAimPreview(cp1, blueTeam.color);
+    }
+    if(p2Charging){
+      const cp2 = getControlledPlayer(redTeam);
+      if(cp2 && cp2.hasBall) drawAimPreview(cp2, redTeam.color);
+    }
+  }
+}
+
+/* ============================== LOOP ============================== */
+let lastTime = performance.now();
+let acc = 0;
+const STEP = 1/60;
+function frameFn(now){
+  requestAnimationFrame(frameFn);
+  let dt = (now-lastTime)/1000;
+  lastTime = now;
+  if(dt>0.25) dt=0.25;
+  acc += dt;
+  while(acc >= STEP){
+    update(STEP);
+    acc -= STEP;
+  }
+  render();
+}
+requestAnimationFrame(frameFn);
+
+})();
+</script>
+</body>
+</html>
