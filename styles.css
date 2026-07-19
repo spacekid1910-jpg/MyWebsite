@@ -444,6 +444,197 @@ ul.plain li span.tag{
   color: var(--mist);
 }
 
+/* =========================================================
+   Ticket stubs — match highlight cards
+   ========================================================= */
+.stub-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@media (max-width: 760px){
+  .stub-grid{ grid-template-columns: 1fr; }
+}
+
+.stub{
+  background: linear-gradient(180deg, var(--ink-raised), #14141B);
+  border: var(--edge);
+  border-radius: var(--radius);
+  padding: 20px 20px 20px 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stub::before{
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: repeating-linear-gradient(180deg, var(--gold) 0 8px, transparent 8px 16px);
+}
+
+.stub .stub-comp{
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  margin: 0 0 6px;
+}
+
+.stub .stub-score{
+  font-family: var(--display);
+  font-size: 1.3rem;
+  margin: 0 0 6px;
+  color: var(--paper);
+}
+
+.stub .stub-meta{
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--mist);
+  margin: 0 0 4px;
+}
+
+.stub .stub-note{
+  font-size: 0.86rem;
+  color: var(--paper);
+  margin: 8px 0 0;
+}
+
+/* =========================================================
+   Charts — CSS-only pie & bar charts (no external libraries)
+   ========================================================= */
+.chart-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+@media (max-width: 760px){
+  .chart-row{ grid-template-columns: 1fr; }
+}
+
+.chart-panel{
+  background: var(--ink-raised);
+  border: var(--edge);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.chart-panel h3{ margin-bottom: 18px; }
+
+.pie{
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin: 0 auto 22px;
+  position: relative;
+}
+
+.pie::after{
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: var(--ink-raised);
+}
+
+.chart-legend{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--mist);
+}
+
+.chart-legend.row{
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.chart-legend li{ display: flex; align-items: center; gap: 8px; }
+
+.swatch-dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.bar-chart{
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  height: 120px;
+}
+
+.bar-chart .bar-group{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.bar-chart .bars{
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+}
+
+.bar-chart .bar{
+  width: 14px;
+  border-radius: 3px 3px 0 0;
+}
+
+.bar-chart .bar.gf{ background: linear-gradient(180deg, var(--gold), var(--claret-2)); }
+.bar-chart .bar.ga{ background: var(--line); }
+
+.bar-chart .bar-label{
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--mist);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.stat-banner{
+  background: var(--ink-raised);
+  border: var(--edge);
+  border-radius: var(--radius);
+  padding: 26px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.stat-banner .big{
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: var(--gold);
+  margin: 6px 0;
+}
+
+.stat-banner .small{
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--mist);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 blockquote{
   margin: 0;
   padding: 18px 20px;
