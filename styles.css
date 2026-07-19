@@ -438,6 +438,28 @@ ul.plain li span.tag{
   margin-top: 8px;
 }
 
+.crest-row{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.crest-row strong{
+  display: block;
+  font-family: var(--body);
+  font-size: 0.95rem;
+  color: var(--paper);
+}
+
+.crest-row span{
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mist);
+}
+
 .pill{
   font-family: var(--mono);
   font-size: 0.72rem;
