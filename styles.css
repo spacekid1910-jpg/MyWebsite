@@ -239,8 +239,12 @@ p{ margin: 0 0 1em; color: var(--paper); }
 
 .squad-grid{
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+@media (max-width: 1100px){
+  .squad-grid{ grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 860px){
@@ -735,6 +739,61 @@ ul.plain li span.tag{
 }
 
 .banner-row .stat-banner{ margin-top: 0; }
+
+/* =========================================================
+   Project cards — external site showcase (Websites page)
+   ========================================================= */
+.project-list{
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.project-card-head{ margin-bottom: 14px; }
+
+.project-card-head h3{ margin: 4px 0 2px; }
+
+.project-tagline{
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--mist);
+  margin: 0;
+}
+
+.btn-external{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-external:hover{
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.coming-soon-card{
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 26px;
+  text-align: center;
+  color: var(--mist);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 blockquote{
   margin: 0;
