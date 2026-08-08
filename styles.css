@@ -383,6 +383,40 @@ p{ margin: 0 0 1em; color: var(--paper); }
 
 .matchday .meta-row strong{ color: var(--paper); font-weight: 400; }
 
+.header-flex{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.header-avatar{
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
+  border: 3px solid var(--gold);
+  flex-shrink: 0;
+  display: block;
+}
+
+@media (max-width: 760px){
+  .header-flex{
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+
+  .header-flex .meta-row{
+    justify-content: center;
+  }
+
+  .header-avatar{
+    width: 120px;
+    height: 120px;
+  }
+}
+
 /* =========================================================
    Content sections
    ========================================================= */
