@@ -649,9 +649,16 @@ ul.plain li span.tag{
   border: var(--edge);
   border-radius: var(--radius);
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-panel h3{ margin-bottom: 30px; }
+
+.chart-body{
+  margin-top: auto;
+  margin-bottom: auto;
+}
 
 .pie{
   width: 150px;
