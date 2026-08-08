@@ -870,18 +870,12 @@ footer p{
   margin: 0;
 }
 
-footer .colours{
-  display: inline-flex;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-footer .swatch{
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  display: inline-block;
-  border: 1px solid var(--line);
+footer .footer-logo{
+  display: block;
+  width: 200px;
+  height: auto;
+  margin: 0 auto 14px;
+  border-radius: 8px;
 }
 
 /* focus visibility */
