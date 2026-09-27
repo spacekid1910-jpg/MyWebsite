@@ -854,23 +854,30 @@ ul.plain li span.tag{
 .btn-whatsapp{
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-top: 18px;
-  padding: 10px 20px;
+  padding: 14px 28px;
   border-radius: 999px;
-  border: 1px solid #25D366;
+  border: 1px solid #3F6A4E;
+  background: #3F6A4E;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #25D366;
+  color: var(--paper);
   text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-whatsapp svg{
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .btn-whatsapp:hover{
-  background: #25D366;
-  color: var(--ink);
+  background: #345A42;
+  border-color: #345A42;
 }
 
 .coming-soon-card{
