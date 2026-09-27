@@ -537,6 +537,16 @@ ul.plain li span.tag{
   color: var(--mist);
 }
 
+a.pill{
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+a.pill:hover{
+  color: var(--paper);
+  border-color: var(--gold);
+}
+
 /* =========================================================
    Media row — original SVG icon cards (no external images)
    ========================================================= */
